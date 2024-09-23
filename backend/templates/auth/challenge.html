@@ -1,6 +1,4 @@
-{% extends "layouts/base.html" %}
-{% block content %}
-<form class="auth card" action="/view" method="post">
+<form class="auth card" hx-post="/htmx/passwords/view" hx-trigger="submit" hx-target="#main">
     <h2>To continue, first verify it’s you</h2>
     <label for="master">Master Password:</label>
     <input id="master" type="password" placeholder="Master Password" name="master_password" />
@@ -12,4 +10,3 @@ var input = document.getElementById('master');
 input.focus();
 input.select();
 </script>
-{% endblock %}

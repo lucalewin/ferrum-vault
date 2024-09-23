@@ -1,3 +1,17 @@
 {
-  "todo": "TODO"
+  "name": "Ferrum Vault",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "permissions": ["storage", "webNavigation", "scripting"],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+		"default_title": "Ferrum Vault",
+		"default_popup": "popup.html"
+	}
 }

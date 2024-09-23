@@ -1,0 +1,13 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<form class="auth" action="/auth/signin" method="post" class="card">
+    <h2>Sign in</h2>
+    <label for="email">Email</label>
+    <input type="email" name="email" />
+    <label for="password">Password</label>
+    <input type="password" name="password" />
+    <label for="repeat_password">Repeat Password</label>
+    <input type="password" />
+    <button>Next</button>
+</form>
+{% endblock %}

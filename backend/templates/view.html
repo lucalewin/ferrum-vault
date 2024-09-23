@@ -1,5 +1,5 @@
-{% extends "layouts/base.html" %}
-{% block content %}
+
+<button hx-get="/htmx/passwords" hx-target="#main">Back</button>
 <dl class="card">
     <dt>Service</dt>
     <dd>{{ entry.service }}</dd>
@@ -10,4 +10,3 @@
     <dt>Password</dt>
     <dd>{{ entry.password }}</dd>
 </dl>
-{% endblock %}

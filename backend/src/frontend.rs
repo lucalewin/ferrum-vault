@@ -15,15 +15,27 @@ use crate::{
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(index))
-        .route("/signin/challenge", get(signin_challenge))
-        .route("/view", post(view))
+        .route("/auth/signin", get(signin_get).post(signin_post))
+        .route("/htmx/passwords", get(passwords))
+        .route("/htmx/passwords/view", post(view))
+        .route("/htmx/signin/challenge", get(signin_challenge))
+
+    // .route("/passwords", get(passwords))
+    // .route("/passwords/view", post(view))
+    // .route("/contacts", get(contacts))
+    // .route("/recovery-codes", get(recovery_codes))
+    // .route("/signin/challenge", get(signin_challenge))
 }
 
 // ------------ templates ------------
 
 #[derive(Template)]
 #[template(path = "index.html")]
-pub struct IndexTemplate {
+pub struct IndexTemplate {}
+
+#[derive(Template)]
+#[template(path = "passwords.html")]
+pub struct PasswordsTemplate {
     pub entries: Vec<PasswordEntry>,
 }
 
@@ -32,6 +44,10 @@ pub struct IndexTemplate {
 pub struct SigninChallengeTemplate {
     pub password_id: i32,
 }
+
+#[derive(Template)]
+#[template(path = "auth/signin.html")]
+pub struct SigninTemplate {}
 
 #[derive(Template)]
 #[template(path = "view.html")]
@@ -52,11 +68,40 @@ pub struct ViewRequestForm {
     pub master_password: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SignInForm {
+    pub email: String,
+    pub password: String,
+    pub remember: Option<bool>
+}
+
 // ------------ routes ------------
 
-pub async fn index(State(db): State<AppState>) -> IndexTemplate {
+pub async fn index() -> IndexTemplate {
+    IndexTemplate {}
+}
+
+pub async fn passwords(State(db): State<AppState>) -> PasswordsTemplate {
     let entries = db.list_entries().await.unwrap();
-    IndexTemplate { entries }
+    PasswordsTemplate { entries }
+}
+
+// FIXME
+pub async fn contacts() -> IndexTemplate {
+    IndexTemplate {}
+}
+
+// FIXME
+pub async fn recovery_codes() -> IndexTemplate {
+    IndexTemplate {}
+}
+
+pub async fn signin_get() -> SigninTemplate {
+    SigninTemplate {}
+}
+
+pub async fn signin_post(Form(data): Form<SignInForm>) -> String {
+    format!("{:?}", data)
 }
 
 pub async fn signin_challenge(

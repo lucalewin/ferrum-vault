@@ -2,15 +2,38 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script
+            src="https://unpkg.com/htmx.org@2.0.2"
+            integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ"
+            crossorigin="anonymous">
+        </script>
         <link href="/assets/css/style.css" rel="stylesheet" />
     </head>
     <body>
         <header>
             <h1><a href="/" style="text-decoration: none;">Ferrum Vault</a></h1>
         </header>
-        <main>
-            {% block content %}{% endblock %}
-        </main>
+        <div>
+            {# <aside>
+                <ul>
+                    <li class="active">
+                        <div
+                            hx-get="/htmx/passwords"
+                            hx-trigger="click"
+                            hx-target="#main"
+                            hx-swap="innerHTML"
+                        >
+                            Passwords
+                        </div>
+                    </li>
+                    <!-- <li><a href="/contacts">Contacts</a></li>
+                    <li><a href="/recovery-codes">Recovery Codes</a></li> -->
+                </ul>
+            </aside> #}
+            <main id="main">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
         <footer>
             <p>Copyright &copy; 2024 - Luca Lewin. All Rights Reserved.</p>
         </footer>
