@@ -54,14 +54,8 @@ const newPageLoad = async () => {
     }
     content += "</div>"
     modal.innerHTML = content;
-{/* <div class="modal-card" data-ferrum-vault="3">
-            <!-- add icon -->
-            <p>{{username}}</p>
-            <p>***********</p>
-        </div> */}
 
     modal.classList.add('modal');
-    // modal.addEventListener("click", () => {modal.style.display = "none"})
     modal.style.display = "none";
     document.body.appendChild(modal);
 
@@ -75,19 +69,26 @@ const newPageLoad = async () => {
             height: 100svh;
             background-color: rgba(0, 0, 0, 0.4);
             z-index: 1;
+            font-size: 15px;
         }
 
         .modal-content {
+            color: #fff;
             background-color: #222;
             margin: 0 auto;
             position: absolute;
-            right: 50%;
+            top: 32px;
+            right: 32px;
+            /* right: 50%;
             bottom: 50%;
-            transform: translate(50%, -50%);
+            transform: translate(50%, -50%); */
             padding: 20px;
             border: 1px solid #666;
             border-radius: 12px;
             width: 256px;
+        }
+        .modal-content h2 {
+            font-size: initial;
         }
         .modal-card {
             padding: 8px;
@@ -160,7 +161,6 @@ const newPageLoad = async () => {
                 }
             }
 
-            modal.style.display = "none";
             form.submit()
         });
     }
