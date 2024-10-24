@@ -1,4 +1,23 @@
-[workspace]
-resolver = "2"
-members = ["backend", "frontend"]
-default-members = ["backend"]
+[package]
+name = "ferrum-vault"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes = "0.8.4"
+askama = { version = "0.12.1", features = ["with-axum"] }
+askama_axum = "0.4.0"
+axum = "0.7"
+axum-macros = "0.4.2"
+bcrypt = "0.15.1"
+chacha20poly1305 = "0.10.1"
+hex = "0.4.3"
+pbkdf2 = "0.12.2"
+serde = { version = "1.0", features = ["derive"] }
+sha2 = "0.10.8"
+sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio"] }
+tokio = { version = "1.41", features = ["full"] }
+toml = "0.8.19"
+tower-http = { version = "0.6.1", features = ["trace", "fs"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
