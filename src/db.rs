@@ -2,9 +2,8 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use sqlx::{
+    postgres::{PgPool, PgPoolOptions},
     prelude::FromRow,
-    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    SqlitePool,
 };
 
 use crate::{
@@ -13,7 +12,7 @@ use crate::{
 };
 
 pub struct Database {
-    pool: SqlitePool,
+    pub pool: PgPool,
 }
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
@@ -30,26 +29,40 @@ pub struct GetRowItem {
 impl Database {
     /// Initialize the SQLite database and create the password table
     pub async fn init(config: &Config) -> Result<Self, Box<dyn std::error::Error>> {
-        tracing::debug!("connecting to database");
-        let options = SqliteConnectOptions::from_str(&config.database_path)?
-            .create_if_missing(true)
-            .to_owned();
+        tracing::debug!("connecting to database, {}", &config.database_path);
 
-        let pool = SqlitePoolOptions::new().connect_with(options).await?;
+        let database_url = dotenvy::var("DATABASE_URL").unwrap();
 
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS passwords (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                service TEXT NOT NULL,
-                username TEXT NOT NULL,
-                password TEXT NOT NULL
-            )",
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
+        let db = PgPoolOptions::new()
+            .max_connections(20)
+            .connect(&database_url)
+            .await
+            .expect("failed to connect to DATABASE_URL");
 
-        Ok(Self { pool })
+        sqlx::migrate!().run(&db).await?;
+
+        Ok(Self { pool: db })
+
+        // tracing::debug!("connecting to database");
+        // let options = SqliteConnectOptions::from_str(&config.database_path)?
+        //     .create_if_missing(true)
+        //     .to_owned();
+
+        // let pool = SqlitePoolOptions::new().connect_with(options).await?;
+
+        // sqlx::query(
+        //     "CREATE TABLE IF NOT EXISTS passwords (
+        //         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        //         service TEXT NOT NULL,
+        //         username TEXT NOT NULL,
+        //         password TEXT NOT NULL
+        //     )",
+        // )
+        // .execute(&pool)
+        // .await
+        // .unwrap();
+
+        // Ok(Self { pool })
     }
 
     // Save an encrypted password to the database

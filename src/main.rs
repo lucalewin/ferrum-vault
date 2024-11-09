@@ -12,6 +12,7 @@ mod config;
 mod db;
 mod frontend;
 mod models;
+pub mod auth;
 
 pub type AppState = Arc<Database>;
 

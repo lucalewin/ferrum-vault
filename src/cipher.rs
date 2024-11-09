@@ -20,7 +20,7 @@ fn derive_key_from_password(master_password: &str) -> [u8; 32] {
 pub fn encrypt_password(master_password: &str, password: &str) -> String {
     let key = derive_key_from_password(master_password);
 
-    let cipher = ChaCha20Poly1305::new(&GenericArray::from_slice(&key));
+    let cipher = ChaCha20Poly1305::new(GenericArray::from_slice(&key));
     let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng);
 
     let ciphertext = cipher.encrypt(&nonce, password.as_bytes()).unwrap();
@@ -35,11 +35,11 @@ pub fn encrypt_password(master_password: &str, password: &str) -> String {
 // Decrypt an encrypted password
 pub fn decrypt_password(master_password: &str, encrypted_password: &str) -> String {
     let key = derive_key_from_password(master_password);
-    let cipher = ChaCha20Poly1305::new(&GenericArray::from_slice(&key));
+    let cipher = ChaCha20Poly1305::new(GenericArray::from_slice(&key));
     let decoded = hex::decode(encrypted_password).unwrap();
     let nonce = GenericArray::from_slice(&decoded[..12]);
     let ciphertext = &decoded[12..];
-    let decrypted = cipher.decrypt(&nonce, &ciphertext[..]).unwrap();
+    let decrypted = cipher.decrypt(nonce, ciphertext).unwrap();
 
     String::from_utf8(decrypted).unwrap()
 }

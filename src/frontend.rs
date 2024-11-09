@@ -72,7 +72,7 @@ pub struct ViewRequestForm {
 pub struct SignInForm {
     pub email: String,
     pub password: String,
-    pub remember: Option<bool>
+    pub remember: Option<bool>,
 }
 
 // ------------ routes ------------

@@ -1,7 +1,18 @@
 # ferrum-vault
+
 A local password manager written in Rust
 
-## What can be stored:
+## Contributing
+
+```sh
+cargo watch -x run
+```
+
+```sh
+npx tailwindcss -w -i input.css -o assets/style.css
+```
+
+## What can be stored
 
 - id
 - name
@@ -9,7 +20,6 @@ A local password manager written in Rust
 - username / email
 - password
 - notes
-
 
 ## API Endpoints
 
