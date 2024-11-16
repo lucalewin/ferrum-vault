@@ -114,7 +114,7 @@ pub async fn signin_challenge(
 
 pub async fn view(State(db): State<AppState>, Form(form): Form<ViewRequestForm>) -> ViewTemplate {
     let mut db_entry = db.get_password_by_id(form.id).await.unwrap();
-    let password = decrypt_password(&form.master_password, &db_entry.password);
+    let password = decrypt_password(&form.master_password, &db_entry.password).unwrap();
 
     db_entry.password = password;
 

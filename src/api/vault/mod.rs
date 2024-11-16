@@ -19,6 +19,7 @@ pub fn router() -> Router<AppState> {
 }
 
 pub enum VaultError {
+    EncryptionError,
     DatabaseError,
     EntryNotFound,
     Other(String),
@@ -32,6 +33,10 @@ impl IntoResponse for VaultError {
                 "internal database error".into(),
             ),
             VaultError::EntryNotFound => (StatusCode::NOT_FOUND, "entry not found".into()),
+            VaultError::EncryptionError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "An encryption error occured".into(),
+            ),
             VaultError::Other(s) => (StatusCode::INTERNAL_SERVER_ERROR, s),
         };
 

@@ -7,9 +7,11 @@ use argon2::{
 use axum::{extract::State, routing::post, Json, Router};
 use error::AuthError;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
-use crate::AppState;
+use crate::{
+    auth::{generate_refresh_token, generate_session_token, verify_refresh_token},
+    AppState,
+};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -110,33 +112,53 @@ async fn login(
     State(state): State<AppState>,
     Json(req): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, AuthError> {
+    struct LoginHelper {
+        id: i32,
+        password: String,
+    }
     // get password for provided email
-    let password_hash =
-        sqlx::query_scalar!("select password from accounts where email = $1", req.email)
-            .fetch_optional(&state.pool)
-            .await
-            .unwrap();
+    let entry = sqlx::query_as!(
+        LoginHelper,
+        "SELECT id, password FROM accounts WHERE email = $1",
+        req.email
+    )
+    .fetch_optional(&state.pool)
+    .await
+    .unwrap();
 
-    let Some(password_hash) = password_hash else {
+    let Some(entry) = entry else {
         return Err(AuthError::WrongCredentials);
     };
 
     // verify password
-    let parsed_hash = PasswordHash::new(&password_hash).unwrap(); // FIXME: no unwrap
-    let argon = Argon2::default();
-
-    if argon
+    let parsed_hash = PasswordHash::new(&entry.password).unwrap(); // FIXME: no unwrap
+    Argon2::default()
         .verify_password(req.password.as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Err(AuthError::WrongCredentials);
-    }
+        // if there is an error, the user provided a false password
+        .map_err(|_| AuthError::WrongCredentials)?;
 
-    // TODO: generate session/refresh tokens + store them in the database
+    // short-lived session token (5 minutes)
+    let session_token = generate_session_token(entry.id.to_string());
+    // if remember_me == true then also generate a refresh token (expires in 7 days)
+    let refresh_token = if req.remember {
+        let token = generate_refresh_token(entry.id.to_string());
+        sqlx::query!(
+            "INSERT INTO sessions (account_id, token, expires) VALUES ($1, $2, $3)",
+            entry.id,
+            token,
+            0
+        )
+        .execute(&state.pool)
+        .await
+        .map_err(|_| AuthError::Other("internal database error".into()))?;
+        Some(token)
+    } else {
+        None
+    };
 
     Ok(Json(LoginResponse {
-        refresh_token: Some("refresh-with-this-please".into()),
-        session_token: "otherwise-use-this".into(),
+        refresh_token,
+        session_token,
     }))
 }
 
@@ -149,7 +171,6 @@ struct RefreshRequest {
 
 #[derive(Serialize)]
 struct RefreshResponse {
-    refresh_token: String,
     session_token: String,
 }
 
@@ -157,10 +178,21 @@ async fn refresh(
     State(state): State<AppState>,
     Json(req): Json<RefreshRequest>,
 ) -> Result<Json<RefreshResponse>, AuthError> {
-    Ok(Json(RefreshResponse {
-        refresh_token: "new refresh token".into(),
-        session_token: req.refresh_token,
-    }))
+    // verify the token
+    let _claims = verify_refresh_token(&req.refresh_token).map_err(|_| AuthError::InvalidToken)?;
+
+    // check if the refresh token is still present in the database
+    let account_id = sqlx::query_scalar!(
+        "SELECT account_id FROM sessions WHERE token = $1",
+        req.refresh_token
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|_| AuthError::InvalidToken)?;
+
+    let session_token = generate_session_token(account_id.to_string());
+
+    Ok(Json(RefreshResponse { session_token }))
 }
 
 // ----------------------------- change email -----------------------------

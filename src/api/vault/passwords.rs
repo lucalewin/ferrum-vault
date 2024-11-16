@@ -5,7 +5,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{auth::SessionUser, AppState};
+use crate::{
+    auth::SessionUser,
+    cipher::{decrypt_password, encrypt_password},
+    AppState,
+};
 
 use super::VaultError;
 
@@ -24,6 +28,7 @@ pub fn router() -> Router<AppState> {
 
 #[derive(Deserialize)]
 struct CreateRequest {
+    passphrase: String,
     name: String,
     email: String,
     password: String,
@@ -32,16 +37,32 @@ struct CreateRequest {
 }
 
 #[derive(Serialize)]
-struct CreateRespone {
+struct CreateResponse {
     success: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>
 }
 
-async fn create_entry(Json(req): Json<CreateRequest>) -> Result<Json<()>, VaultError> {
+async fn create_entry(
+    session: SessionUser,
+    State(state): State<AppState>,
+    Json(req): Json<CreateRequest>,
+) -> Result<Json<CreateResponse>, VaultError> {
     tracing::debug!("create new entry");
 
-    todo!()
+    // TODO: verify passphrase
+
+    let encrypted = encrypt_password(&req.passphrase, &req.password).map_err(|_| VaultError::EncryptionError)?;
+
+    sqlx::query!(
+        "INSERT INTO passwords (account_id, name, email, password, url, note) VALUES ($1, $2, $3, $4, $5, $6)",
+        session.0,
+        req.name,
+        req.email,
+        encrypted,
+        req.url,
+        req.note,
+    ).execute(&state.pool).await.unwrap();
+
+    Ok(Json(CreateResponse { success: true }))
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +97,12 @@ async fn get_all_entries(
 
 // ---------------------------------------------------------------------------
 
+#[derive(Deserialize)]
+struct GetEntryRequest {
+    passphrase: String,
+    challenge_token: String,
+}
+
 #[derive(Serialize)]
 struct FullPasswordEntry {
     id: i32,
@@ -86,19 +113,29 @@ struct FullPasswordEntry {
     note: Option<String>,
 }
 
-async fn get_entry(Path(entry_id): Path<i32>, session: SessionUser, State(state): State<AppState>) -> Result<Json<FullPasswordEntry>, VaultError> {
+async fn get_entry(
+    Path(entry_id): Path<i32>,
+    session: SessionUser,
+    State(state): State<AppState>,
+    Json(req): Json<GetEntryRequest>,
+) -> Result<Json<FullPasswordEntry>, VaultError> {
     tracing::trace!("getting entry `{}`", entry_id);
 
-    let entry = sqlx::query_as!(
+    // TODO: verify challenge token + passphrase
+
+    let mut entry = sqlx::query_as!(
         FullPasswordEntry,
         "SELECT id, name, email, password, url, note FROM passwords WHERE id = $1 AND account_id = $2",
         entry_id,
-        session.id
+        session.0
     )
     .fetch_optional(&state.pool)
     .await
     .map_err(|_| VaultError::DatabaseError)?
     .ok_or(VaultError::EntryNotFound)?;
+
+    entry.password = decrypt_password(&req.passphrase, &entry.password)
+        .map_err(|_| VaultError::EncryptionError)?;
 
     Ok(Json(entry))
 }

@@ -7,12 +7,12 @@ use tokio::net::TcpListener;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
 mod api;
+pub mod auth;
 mod cipher;
 mod config;
 mod db;
 mod frontend;
 mod models;
-pub mod auth;
 
 pub type AppState = Arc<Database>;
 
